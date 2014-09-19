@@ -5,8 +5,16 @@ using Iterators
 export showoff
 
 
+# suppress compile errors when there isn't a grisu_ccall macro
+if VERSION >= v"0.4-dev"
+    macro grisu_ccall(x, mode, ndigits)
+        quote end
+    end
+end
+
+
 # Fallback
-function showoff(xs::AbstractArray)
+function showoff(xs::AbstractArray, style=:none)
     result = Array(String, length(xs))
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
@@ -72,6 +80,9 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
         delta = min(x1 - x0, delta)
     end
     x_min, x_max = concrete_minimum(xs), concrete_maximum(xs)
+    if x_min == x_max
+        delta = zero(T)
+    end
 
     x_min, x_max, delta = (float64(float32(x_min)), float64(float32(x_max)), 
         float64(float32(delta)))
@@ -91,41 +102,43 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
     if VERSION < v"0.4-dev"
         if style == :plain
             # SHORTEST_SINGLE rather than SHORTEST to crudely round away tiny innacuracies
-            eval(quote Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0 end)
+            Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             precision = max(0, Base.Grisu.LEN[1] - Base.Grisu.POINT[1])
 
-            return x -> format_fixed(x, precision)
+            return String[format_fixed(x, precision) for x in xs]
         elseif style == :scientific
-            eval(quote Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0 end)
+            Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             delta_magnitude = Base.Grisu.POINT[1]
 
-            eval(quote Base.Grisu.@grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0 end)
+            Base.Grisu.@grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
             x_max_magnitude = Base.Grisu.POINT[1]
 
             precision = 1 + max(0, x_max_magnitude - delta_magnitude)
 
-            return x -> format_fixed_scientific(x, precision, false)
+            return String[format_fixed_scientific(x, precision, false)
+                          for x in xs]
         elseif style == :engineering
-            eval(quote Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0 end)
+            Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             delta_magnitude = Base.Grisu.POINT[1]
 
-            eval(quote Base.Grisu.@grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0 end)
+            Base.Grisu.@grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
             x_max_magnitude = Base.Grisu.POINT[1]
 
             precision = 1 + max(0, x_max_magnitude - delta_magnitude)
 
-            return x -> format_fixed_scientific(x, precision, true)
+            return String[format_fixed_scientific(x, precision, true)
+                          for x in xs]
         else
             error("$(style) is not a recongnized number format")
         end
     else
         if style == :plain
-            len, point, neg, buffer = Base.Grisu.grisu(delta, Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(float32(delta), Base.Grisu.SHORTEST, 0)
             precision = max(0, len - point)
 
             return String[format_fixed(x, precision) for x in xs]
         elseif style == :scientific
-            len, point, neg, buffer = Base.Grisu.grisu(delta, Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(float32(delta), Base.Grisu.SHORTEST, 0)
             delta_magnitude = point
 
             len, point, neg, buffer = Base.Grisu.grisu(x_max, Base.Grisu.SHORTEST, 0)
@@ -136,10 +149,10 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
             return String[format_fixed_scientific(x, precision, false)
                           for x in xs]
         elseif style == :engineering
-            len, point, neg, buffer = Base.Grisu.grisu(delta, Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(float32(delta), Base.Grisu.SHORTEST, 0)
             delta_magnitude = point
 
-            len, point, neg, buffer = Base.Grisu.grisu(x_max, Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(float32(x_max), Base.Grisu.SHORTEST, 0)
             x_max_magnitude = point
 
             precision = 1 + max(0, x_max_magnitude - delta_magnitude)
@@ -167,7 +180,7 @@ function format_fixed(x::FloatingPoint, precision::Integer)
     end
 
     if VERSION < v"0.4-dev"
-        eval(quote Base.Grisu.@grisu_ccall x Base.Grisu.FIXED precision end)
+        Base.Grisu.@grisu_ccall x Base.Grisu.FIXED precision
         point, len, digits = (Base.Grisu.POINT[1], Base.Grisu.LEN[1], Base.Grisu.DIGITS)
     else
         len, point, neg, digits = Base.Grisu.grisu(x, Base.Grisu.FIXED,
@@ -242,7 +255,7 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
     end
 
     if VERSION < v"0.4-dev"
-        eval(quote Base.Grisu.@grisu_ccall x Base.Grisu.FIXED grisu_precision end)
+        Base.Grisu.@grisu_ccall x Base.Grisu.FIXED grisu_precision
         point, len, digits = (Base.Grisu.POINT[1], Base.Grisu.LEN[1], Base.Grisu.DIGITS)
     else
         len, point, neg, digits = Base.Grisu.grisu(x, Base.Grisu.FIXED,
@@ -253,7 +266,7 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
 
     buf = IOBuffer()
     if x < 0
-        push!(buf, '-')
+        print(buf, '-')
     end
 
     print(buf, convert(Char, digits[1]))
@@ -292,6 +305,62 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
     end
 
     return takebuf_string(buf)
+end
+
+
+
+if VERSION >= v"0.4-dev"
+    function showoff{T <: Date}(ds::AbstractArray{T}, style=:none)
+        const month_names = [
+            "January", "February", "March", "April", "May", "June", "July",
+            "August", "September", "October", "November", "December"
+        ]
+
+        const month_abbrevs = [
+            "Jan", "Feb", "Mar", "Apr", "May", "June",
+            "July", "Aug", "Sept", "Oct", "Nev", "Dec"
+        ]
+
+        day_all_1   = all(map(d -> Dates.day(d) == 1, ds))
+        month_all_1 = all(map(d -> Dates.month(d) == 1, ds))
+        years = Set()
+        for d in ds
+            push!(years, Dates.year(d))
+        end
+
+        buf = IOBuffer()
+        labels = Array(String, length(ds))
+        if day_all_1 && month_all_1
+            # only label years
+            for (i, d) in enumerate(ds)
+                print(buf, Dates.year(d))
+                labels[i] = takebuf_string(buf)
+            end
+        elseif day_all_1
+            # label months and years
+            for (i, d) in enumerate(ds)
+                if d == ds[1] || Dates.month(d) == 1
+                    print(buf, month_abbrevs[Dates.month(d)], " ", Dates.year(d))
+                else
+                    print(buf, month_abbrevs[Dates.month(d)])
+                end
+                labels[i] = takebuf_string(buf)
+            end
+        else
+            for (i, d) in enumerate(ds)
+                if d == ds[1] || (Dates.month(d) == 1 && Dates.day(d) == 1)
+                    print(buf, month_abbrevs[Dates.month(d)], " ", Dates.day(d), " ", Dates.year(d))
+                elseif Dates.day(d) == 1
+                    print(buf, month_abbrevs[Dates.month(d)], " ", Dates.day(d))
+                else
+                    print(buf, Dates.day(d))
+                end
+                labels[i] = takebuf_string(buf)
+            end
+        end
+
+        return labels
+    end
 end
 
 
