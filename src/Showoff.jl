@@ -10,6 +10,8 @@ if VERSION >= v"0.4-dev"
     macro grisu_ccall(x, mode, ndigits)
         quote end
     end
+else
+    import Base.Grisu.@grisu_ccall
 end
 
 
@@ -102,15 +104,15 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
     if VERSION < v"0.4-dev"
         if style == :plain
             # SHORTEST_SINGLE rather than SHORTEST to crudely round away tiny innacuracies
-            Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
+            @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             precision = max(0, Base.Grisu.LEN[1] - Base.Grisu.POINT[1])
 
             return String[format_fixed(x, precision) for x in xs]
         elseif style == :scientific
-            Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
+            @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             delta_magnitude = Base.Grisu.POINT[1]
 
-            Base.Grisu.@grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
+            @grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
             x_max_magnitude = Base.Grisu.POINT[1]
 
             precision = 1 + max(0, x_max_magnitude - delta_magnitude)
@@ -118,10 +120,10 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
             return String[format_fixed_scientific(x, precision, false)
                           for x in xs]
         elseif style == :engineering
-            Base.Grisu.@grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
+            @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             delta_magnitude = Base.Grisu.POINT[1]
 
-            Base.Grisu.@grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
+            @grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
             x_max_magnitude = Base.Grisu.POINT[1]
 
             precision = 1 + max(0, x_max_magnitude - delta_magnitude)
@@ -180,7 +182,7 @@ function format_fixed(x::FloatingPoint, precision::Integer)
     end
 
     if VERSION < v"0.4-dev"
-        Base.Grisu.@grisu_ccall x Base.Grisu.FIXED precision
+        @grisu_ccall x Base.Grisu.FIXED precision
         point, len, digits = (Base.Grisu.POINT[1], Base.Grisu.LEN[1], Base.Grisu.DIGITS)
     else
         len, point, neg, digits = Base.Grisu.grisu(x, Base.Grisu.FIXED,
@@ -255,7 +257,7 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
     end
 
     if VERSION < v"0.4-dev"
-        Base.Grisu.@grisu_ccall x Base.Grisu.FIXED grisu_precision
+        @grisu_ccall x Base.Grisu.FIXED grisu_precision
         point, len, digits = (Base.Grisu.POINT[1], Base.Grisu.LEN[1], Base.Grisu.DIGITS)
     else
         len, point, neg, digits = Base.Grisu.grisu(x, Base.Grisu.FIXED,
