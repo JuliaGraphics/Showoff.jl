@@ -1,5 +1,6 @@
 module Showoff
 
+using Compat
 using Iterators
 
 export showoff
@@ -86,7 +87,7 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
         delta = zero(T)
     end
 
-    x_min, x_max, delta = (float64(float32(x_min)), float64(float32(x_max)), 
+    x_min, x_max, delta = (float64(float32(x_min)), float64(float32(x_max)),
         float64(float32(delta)))
 
     if !isfinite(x_min) || !isfinite(x_max) || !isfinite(delta)
@@ -103,7 +104,7 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
 
     if VERSION < v"0.4-dev"
         if style == :plain
-            # SHORTEST_SINGLE rather than SHORTEST to crudely round away tiny innacuracies
+            # SHORTEST_SINGLE rather than SHORTEST to crudely round away tiny inaccuracies
             @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
             precision = max(0, Base.Grisu.LEN[1] - Base.Grisu.POINT[1])
 
@@ -251,7 +252,7 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
 
     mag = log10(abs(x))
     if mag < 0
-        grisu_precision = precision + abs(iround(mag))
+        grisu_precision = precision + abs(round(Integer, mag))
     else
         grisu_precision = precision
     end

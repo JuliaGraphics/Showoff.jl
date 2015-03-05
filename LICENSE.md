@@ -1,6 +1,6 @@
 The Showoff.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2014: Daniel C. Jones.
+> Copyright (c) 2014--2015: Daniel C. Jones and [other contributors](https://github.com/dcjones/Showoff.jl/graphs/contributors).
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
