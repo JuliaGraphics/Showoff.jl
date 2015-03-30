@@ -1,6 +1,7 @@
 module Showoff
 
 using Iterators
+using Compat
 
 export showoff
 
@@ -86,8 +87,9 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
         delta = zero(T)
     end
 
-    x_min, x_max, delta = (float64(float32(x_min)), float64(float32(x_max)), 
-        float64(float32(delta)))
+    x_min = @compat Float64(@compat Float32(x_min))
+    x_max = @compat Float64(@compat Float32(x_max))
+    delta = @compat Float64(@compat Float32(delta))
 
     if !isfinite(x_min) || !isfinite(x_max) || !isfinite(delta)
         error("At least one finite value must be provided to formatter.")
@@ -135,12 +137,14 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
         end
     else
         if style == :plain
-            len, point, neg, buffer = Base.Grisu.grisu(float32(delta), Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(
+                (@compat Float32(delta)), Base.Grisu.SHORTEST, 0)
             precision = max(0, len - point)
 
             return String[format_fixed(x, precision) for x in xs]
         elseif style == :scientific
-            len, point, neg, buffer = Base.Grisu.grisu(float32(delta), Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(
+                (@compat Float32(delta)), Base.Grisu.SHORTEST, 0)
             delta_magnitude = point
 
             len, point, neg, buffer = Base.Grisu.grisu(x_max, Base.Grisu.SHORTEST, 0)
@@ -151,10 +155,12 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
             return String[format_fixed_scientific(x, precision, false)
                           for x in xs]
         elseif style == :engineering
-            len, point, neg, buffer = Base.Grisu.grisu(float32(delta), Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(
+                (@compat Float32(delta)), Base.Grisu.SHORTEST, 0)
             delta_magnitude = point
 
-            len, point, neg, buffer = Base.Grisu.grisu(float32(x_max), Base.Grisu.SHORTEST, 0)
+            len, point, neg, buffer = Base.Grisu.grisu(
+                (@compat Float32(x_max)), Base.Grisu.SHORTEST, 0)
             x_max_magnitude = point
 
             precision = 1 + max(0, x_max_magnitude - delta_magnitude)
@@ -251,7 +257,7 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
 
     mag = log10(abs(x))
     if mag < 0
-        grisu_precision = precision + abs(iround(mag))
+        grisu_precision = precision + abs(@compat round(Int, mag))
     else
         grisu_precision = precision
     end
