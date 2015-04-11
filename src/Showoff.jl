@@ -218,7 +218,7 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
 
     mag = floor(Int, log10(abs(x)))
     if mag < 0
-        grisu_precision = precision + abs(@compat round(Int, mag))
+        grisu_precision = precision + abs(round(Int, mag))
     else
         grisu_precision = precision
     end
