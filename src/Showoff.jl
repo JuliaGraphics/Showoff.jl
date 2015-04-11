@@ -1,7 +1,7 @@
 module Showoff
 
-using Iterators
 using Compat
+using Iterators: drop
 
 export showoff
 
@@ -13,6 +13,19 @@ if VERSION >= v"0.4-dev"
     end
 else
     import Base.Grisu.@grisu_ccall
+end
+
+
+function grisu(v::FloatingPoint, mode, requested_digits)
+    if VERSION < v"0.4-dev"
+        if isa(v, Float32) && mode == Base.Grisu.SHORTEST
+            mode = Base.Grisu.SHORTEST_SINGLE
+        end
+        @grisu_ccall v mode requested_digits
+        return Base.Grisu.LEN[1], Base.Grisu.POINT[1], Base.Grisu.NEG, Base.Grisu.DIGITS
+    else
+        return Base.Grisu.grisu(v, mode, requested_digits)
+    end
 end
 
 
@@ -75,23 +88,31 @@ function concrete_maximum(xs)
 end
 
 
-function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
-    # figure out the lowest suitable precision
-    delta = Inf
-    finite_xs = filter(isfinite, xs)
-    for (x0, x1) in zip(finite_xs, drop(finite_xs, 1))
-        delta = min(x1 - x0, delta)
+function plain_precision_heuristic{T <: FloatingPoint}(xs::AbstractArray{T})
+    ys = filter(isfinite, xs)
+    precision = 0
+    for y in ys
+        len, point, neg, digits = grisu(convert(Float32, y), Base.Grisu.SHORTEST, 0)
+        precision = max(precision, len - point)
     end
-    x_min, x_max = concrete_minimum(xs), concrete_maximum(xs)
-    if x_min == x_max
-        delta = zero(T)
-    end
+    return max(precision, 0)
+end
 
+
+function scientific_precision_heuristic{T <: FloatingPoint}(xs::AbstractArray{T})
+    ys = [x == 0.0 ? 0.0 : x / 10.0^floor(log10(abs(x)))
+          for x in filter(isfinite, xs)]
+    return plain_precision_heuristic(ys) + 1
+end
+
+
+function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
+    x_min = concrete_minimum(xs)
+    x_max = concrete_maximum(xs)
     x_min = @compat Float64(@compat Float32(x_min))
     x_max = @compat Float64(@compat Float32(x_max))
-    delta = @compat Float64(@compat Float32(delta))
 
-    if !isfinite(x_min) || !isfinite(x_max) || !isfinite(delta)
+    if !isfinite(x_min) || !isfinite(x_max)
         error("At least one finite value must be provided to formatter.")
     end
 
@@ -103,73 +124,19 @@ function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
         end
     end
 
-    if VERSION < v"0.4-dev"
-        if style == :plain
-            # SHORTEST_SINGLE rather than SHORTEST to crudely round away tiny innacuracies
-            @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
-            precision = max(0, Base.Grisu.LEN[1] - Base.Grisu.POINT[1])
-
-            return String[format_fixed(x, precision) for x in xs]
-        elseif style == :scientific
-            @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
-            delta_magnitude = Base.Grisu.POINT[1]
-
-            @grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
-            x_max_magnitude = Base.Grisu.POINT[1]
-
-            precision = 1 + max(0, x_max_magnitude - delta_magnitude)
-
-            return String[format_fixed_scientific(x, precision, false)
-                          for x in xs]
-        elseif style == :engineering
-            @grisu_ccall delta Base.Grisu.SHORTEST_SINGLE 0
-            delta_magnitude = Base.Grisu.POINT[1]
-
-            @grisu_ccall x_max Base.Grisu.SHORTEST_SINGLE 0
-            x_max_magnitude = Base.Grisu.POINT[1]
-
-            precision = 1 + max(0, x_max_magnitude - delta_magnitude)
-
-            return String[format_fixed_scientific(x, precision, true)
-                          for x in xs]
-        else
-            error("$(style) is not a recongnized number format")
-        end
+    if style == :plain
+        precision = plain_precision_heuristic(xs)
+        return String[format_fixed(x, precision) for x in xs]
+    elseif style == :scientific
+        precision = scientific_precision_heuristic(xs)
+        return String[format_fixed_scientific(x, precision, false)
+                      for x in xs]
+    elseif style == :engineering
+        precision = scientific_precision_heuristic(xs)
+        return String[format_fixed_scientific(x, precision, true)
+                      for x in xs]
     else
-        if style == :plain
-            len, point, neg, buffer = Base.Grisu.grisu(
-                (@compat Float32(delta)), Base.Grisu.SHORTEST, 0)
-            precision = max(0, len - point)
-
-            return String[format_fixed(x, precision) for x in xs]
-        elseif style == :scientific
-            len, point, neg, buffer = Base.Grisu.grisu(
-                (@compat Float32(delta)), Base.Grisu.SHORTEST, 0)
-            delta_magnitude = point
-
-            len, point, neg, buffer = Base.Grisu.grisu(x_max, Base.Grisu.SHORTEST, 0)
-            x_max_magnitude = point
-
-            precision = 1 + max(0, x_max_magnitude - delta_magnitude)
-
-            return String[format_fixed_scientific(x, precision, false)
-                          for x in xs]
-        elseif style == :engineering
-            len, point, neg, buffer = Base.Grisu.grisu(
-                (@compat Float32(delta)), Base.Grisu.SHORTEST, 0)
-            delta_magnitude = point
-
-            len, point, neg, buffer = Base.Grisu.grisu(
-                (@compat Float32(x_max)), Base.Grisu.SHORTEST, 0)
-            x_max_magnitude = point
-
-            precision = 1 + max(0, x_max_magnitude - delta_magnitude)
-
-            return String[format_fixed_scientific(x, precision, true)
-                          for x in xs]
-        else
-            error("$(style) is not a recongnized number format")
-        end
+        error("$(style) is not a recongnized number format")
     end
 end
 
@@ -187,13 +154,7 @@ function format_fixed(x::FloatingPoint, precision::Integer)
         return "NaN"
     end
 
-    if VERSION < v"0.4-dev"
-        @grisu_ccall x Base.Grisu.FIXED precision
-        point, len, digits = (Base.Grisu.POINT[1], Base.Grisu.LEN[1], Base.Grisu.DIGITS)
-    else
-        len, point, neg, digits = Base.Grisu.grisu(x, Base.Grisu.FIXED,
-                                                   precision)
-    end
+    len, point, neg, digits = grisu(x, Base.Grisu.FIXED, precision)
 
     buf = IOBuffer()
     if x < 0
@@ -255,20 +216,15 @@ function format_fixed_scientific(x::FloatingPoint, precision::Integer,
         return "NaN"
     end
 
-    mag = log10(abs(x))
+    mag = floor(Int, log10(abs(x)))
     if mag < 0
         grisu_precision = precision + abs(@compat round(Int, mag))
     else
         grisu_precision = precision
     end
 
-    if VERSION < v"0.4-dev"
-        @grisu_ccall x Base.Grisu.FIXED grisu_precision
-        point, len, digits = (Base.Grisu.POINT[1], Base.Grisu.LEN[1], Base.Grisu.DIGITS)
-    else
-        len, point, neg, digits = Base.Grisu.grisu(x, Base.Grisu.FIXED,
-                                                   grisu_precision)
-    end
+    len, point, neg, digits = grisu((x / 10.0^mag), Base.Grisu.FIXED, grisu_precision)
+    point += mag
 
     @assert len > 0
 
