@@ -18,7 +18,7 @@ else
 end
 
 
-function grisu(v::FloatingPoint, mode, requested_digits)
+function grisu(v::AbstractFloat, mode, requested_digits)
     if VERSION < v"0.4-dev"
         if isa(v, Float32) && mode == Base.Grisu.SHORTEST
             mode = Base.Grisu.SHORTEST_SINGLE
@@ -53,14 +53,14 @@ function concrete_minimum(xs)
 
     x_min = first(xs)
     for x in xs
-        if isa(x, FloatingPoint) && isfinite(x)
+        if isa(x, AbstractFloat) && isfinite(x)
             x_min = x
             break
         end
     end
 
     for x in xs
-        if isa(x, FloatingPoint) && isfinite(x) && x < x_min
+        if isa(x, AbstractFloat) && isfinite(x) && x < x_min
             x_min = x
         end
     end
@@ -75,14 +75,14 @@ function concrete_maximum(xs)
 
     x_max = first(xs)
     for x in xs
-        if isa(x, FloatingPoint) && isfinite(x)
+        if isa(x, AbstractFloat) && isfinite(x)
             x_max = x
             break
         end
     end
 
     for x in xs
-        if isa(x, FloatingPoint) && isfinite(x) && x > x_max
+        if isa(x, AbstractFloat) && isfinite(x) && x > x_max
             x_max = x
         end
     end
@@ -90,7 +90,7 @@ function concrete_maximum(xs)
 end
 
 
-function plain_precision_heuristic{T <: FloatingPoint}(xs::AbstractArray{T})
+function plain_precision_heuristic{T <: AbstractFloat}(xs::AbstractArray{T})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
@@ -101,14 +101,14 @@ function plain_precision_heuristic{T <: FloatingPoint}(xs::AbstractArray{T})
 end
 
 
-function scientific_precision_heuristic{T <: FloatingPoint}(xs::AbstractArray{T})
+function scientific_precision_heuristic{T <: AbstractFloat}(xs::AbstractArray{T})
     ys = [x == 0.0 ? 0.0 : x / 10.0^floor(log10(abs(x)))
           for x in filter(isfinite, xs)]
     return plain_precision_heuristic(ys) + 1
 end
 
 
-function showoff{T <: FloatingPoint}(xs::AbstractArray{T}, style=:auto)
+function showoff{T <: AbstractFloat}(xs::AbstractArray{T}, style=:auto)
     x_min = concrete_minimum(xs)
     x_max = concrete_maximum(xs)
     x_min = @compat Float64(@compat Float32(x_min))
@@ -145,7 +145,7 @@ end
 
 # Print a floating point number at fixed precision. Pretty much equivalent to
 # @sprintf("%0.$(precision)f", x), without the macro issues.
-function format_fixed(x::FloatingPoint, precision::Integer)
+function format_fixed(x::AbstractFloat, precision::Integer)
     @assert precision >= 0
 
     if x == Inf
@@ -206,7 +206,7 @@ const superscript_numerals = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷
 
 # Print a floating point number in scientific notation at fixed precision. Sort of equivalent
 # to @sprintf("%0.$(precision)e", x), but prettier printing.
-function format_fixed_scientific(x::FloatingPoint, precision::Integer,
+function format_fixed_scientific(x::AbstractFloat, precision::Integer,
                                  engineering::Bool)
     if x == 0.0
         return "0"
