@@ -33,7 +33,7 @@ end
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
-    result = Array(String, length(xs))
+    result = Array(AbstractString, length(xs))
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
         show(buf, x)
@@ -128,14 +128,14 @@ function showoff{T <: AbstractFloat}(xs::AbstractArray{T}, style=:auto)
 
     if style == :plain
         precision = plain_precision_heuristic(xs)
-        return String[format_fixed(x, precision) for x in xs]
+        return AbstractString[format_fixed(x, precision) for x in xs]
     elseif style == :scientific
         precision = scientific_precision_heuristic(xs)
-        return String[format_fixed_scientific(x, precision, false)
+        return AbstractString[format_fixed_scientific(x, precision, false)
                       for x in xs]
     elseif style == :engineering
         precision = scientific_precision_heuristic(xs)
-        return String[format_fixed_scientific(x, precision, true)
+        return AbstractString[format_fixed_scientific(x, precision, true)
                       for x in xs]
     else
         error("$(style) is not a recongnized number format")
@@ -325,7 +325,7 @@ if VERSION >= v"0.4-dev"
             first_label_format = f1
         end
 
-        labels = Array(String, length(ds))
+        labels = Array(AbstractString, length(ds))
         labels[1] = Dates.format(ds[1], first_label_format)
         d_last = ds[1]
         for (i, d) in enumerate(ds[2:end])
