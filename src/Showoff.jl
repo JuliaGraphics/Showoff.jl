@@ -276,7 +276,7 @@ end
 
 
 if VERSION >= v"0.4-dev"
-    function showoff{T <: Union(Date, DateTime)}(ds::AbstractArray{T}, style=:none)
+    function showoff{T <: (@compat Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none)
         years = Set()
         months = Set()
         days = Set()
