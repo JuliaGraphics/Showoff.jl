@@ -25,8 +25,10 @@ function grisu(v::AbstractFloat, mode, requested_digits)
         end
         @grisu_ccall v mode requested_digits
         return Base.Grisu.LEN[1], Base.Grisu.POINT[1], Base.Grisu.NEG, Base.Grisu.DIGITS
-    else
+    elseif VERSION < v"0.4.0-dev+2094"
         return Base.Grisu.grisu(v, mode, requested_digits)
+    else
+        return tuple(Base.Grisu.grisu(v, mode, requested_digits)..., Base.Grisu.DIGITS)
     end
 end
 
