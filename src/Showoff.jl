@@ -5,8 +5,6 @@ module Showoff
 using Compat
 if VERSION >= v"0.6.0-dev.1015"
     import Base.Iterators: drop
-else
-    import Iterators: drop
 end
 
 export showoff
