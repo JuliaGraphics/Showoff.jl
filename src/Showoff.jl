@@ -3,7 +3,9 @@ VERSION >= v"0.4.0-dev+6641" && __precompile__()
 module Showoff
 
 using Compat
-using Iterators: drop
+if VERSION >= v"0.6.0-dev.1015"
+    import Base.Iterators: drop
+end
 
 export showoff
 
