@@ -1,2 +1,2 @@
-julia 0.4
-Compat
+julia 0.5
+Compat 0.18

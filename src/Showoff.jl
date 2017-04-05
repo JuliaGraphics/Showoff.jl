@@ -41,7 +41,7 @@ function showoff(xs::AbstractArray, style=:none)
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
         show(buf, x)
-        result[i] = takebuf_string(buf)
+        result[i] = @compat String(take!(buf))
     end
 
     return result
@@ -203,7 +203,7 @@ function format_fixed(x::AbstractFloat, precision::Integer)
         print(buf, '0')
     end
 
-    takebuf_string(buf)
+    @compat String(take!(buf))
 end
 
 const superscript_numerals = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
@@ -274,7 +274,7 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
         end
     end
 
-    return takebuf_string(buf)
+    return @compat String(take!(buf))
 end
 
 
