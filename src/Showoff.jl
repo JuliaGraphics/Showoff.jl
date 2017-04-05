@@ -11,12 +11,8 @@ export showoff
 
 
 # suppress compile errors when there isn't a grisu_ccall macro
-if VERSION >= v"0.4-dev"
-    macro grisu_ccall(x, mode, ndigits)
-        quote end
-    end
-else
-    import Base.Grisu.@grisu_ccall
+macro grisu_ccall(x, mode, ndigits)
+    quote end
 end
 
 
@@ -41,7 +37,7 @@ function showoff(xs::AbstractArray, style=:none)
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
         show(buf, x)
-        result[i] = @compat String(take!(buf))
+        result[i] = String(take!(buf))
     end
 
     return result
@@ -115,8 +111,8 @@ end
 function showoff{T <: AbstractFloat}(xs::AbstractArray{T}, style=:auto)
     x_min = concrete_minimum(xs)
     x_max = concrete_maximum(xs)
-    x_min = @compat Float64(@compat Float32(x_min))
-    x_max = @compat Float64(@compat Float32(x_max))
+    x_min = Float64(Float32(x_min))
+    x_max = Float64(Float32(x_max))
 
     if !isfinite(x_min) || !isfinite(x_max)
         error("At least one finite value must be provided to formatter.")
@@ -203,7 +199,7 @@ function format_fixed(x::AbstractFloat, precision::Integer)
         print(buf, '0')
     end
 
-    @compat String(take!(buf))
+    String(take!(buf))
 end
 
 const superscript_numerals = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
@@ -274,13 +270,13 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
         end
     end
 
-    return @compat String(take!(buf))
+    return String(take!(buf))
 end
 
 
 
 if VERSION >= v"0.4-dev"
-    function showoff{T <: (@compat Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none)
+    function showoff{T <: (Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none)
         years = Set()
         months = Set()
         days = Set()
