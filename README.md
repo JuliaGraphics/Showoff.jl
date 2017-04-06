@@ -1,7 +1,7 @@
 # Showoff
 
-[![Build Status](https://travis-ci.org/dcjones/Showoff.jl.svg?branch=master)](https://travis-ci.org/dcjones/Showoff.jl)
-
+[![Build
+Status](https://travis-ci.org/JuliaGraphics/Showoff.jl.svg?branch=master)](https://travis-ci.org/JuliaGraphics/Showoff.jl)
 
 Showoff provides an interface for consistently formatting an array of n things,
 e.g. numbers, dates, unitful values. It's used in Gadfly to
