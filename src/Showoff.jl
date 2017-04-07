@@ -33,7 +33,7 @@ end
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
-    result = Array(AbstractString, length(xs))
+    result = Array{AbstractString}(length(xs))
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
         show(buf, x)
@@ -325,7 +325,7 @@ if VERSION >= v"0.4-dev"
             first_label_format = f1
         end
 
-        labels = Array(AbstractString, length(ds))
+        labels = Array{AbstractString}(length(ds))
         labels[1] = Dates.format(ds[1], first_label_format)
         d_last = ds[1]
         for (i, d) in enumerate(ds[2:end])
