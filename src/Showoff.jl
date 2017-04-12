@@ -1,11 +1,9 @@
-VERSION >= v"0.4.0-dev+6641" && __precompile__()
+__precompile__()
 
 module Showoff
 
 using Compat
-if VERSION >= v"0.6.0-dev.1015"
-    import Base.Iterators: drop
-end
+import Compat.Iterators: drop
 
 export showoff
 
@@ -17,23 +15,13 @@ end
 
 
 function grisu(v::AbstractFloat, mode, requested_digits)
-    if VERSION < v"0.4-dev"
-        if isa(v, Float32) && mode == Base.Grisu.SHORTEST
-            mode = Base.Grisu.SHORTEST_SINGLE
-        end
-        @grisu_ccall v mode requested_digits
-        return Base.Grisu.LEN[1], Base.Grisu.POINT[1], Base.Grisu.NEG, Base.Grisu.DIGITS
-    elseif VERSION < v"0.5.0-dev+2094"
-        return Base.Grisu.grisu(v, mode, requested_digits)
-    else
-        return tuple(Base.Grisu.grisu(v, mode, requested_digits)..., Base.Grisu.DIGITS)
-    end
+    return tuple(Base.Grisu.grisu(v, mode, requested_digits)..., Base.Grisu.DIGITS)
 end
 
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
-    result = Array(AbstractString, length(xs))
+    result = Vector{String}(length(xs))
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
         show(buf, x)
@@ -48,7 +36,7 @@ end
 
 function concrete_minimum(xs)
     if done(xs, start(xs))
-        error("argument must not be empty")
+        throw(ArgumentError("argument must not be empty"))
     end
 
     x_min = first(xs)
@@ -70,7 +58,7 @@ end
 
 function concrete_maximum(xs)
     if done(xs, start(xs))
-        error("argument must not be empty")
+        throw(ArgumentError("argument must not be empty"))
     end
 
     x_max = first(xs)
@@ -103,7 +91,7 @@ end
 
 function scientific_precision_heuristic{T <: AbstractFloat}(xs::AbstractArray{T})
     ys = [x == 0.0 ? 0.0 : x / 10.0^floor(log10(abs(x)))
-          for x in filter(isfinite, xs)]
+          for x in xs if isfinite(x)]
     return plain_precision_heuristic(ys) + 1
 end
 
@@ -115,7 +103,7 @@ function showoff{T <: AbstractFloat}(xs::AbstractArray{T}, style=:auto)
     x_max = Float64(Float32(x_max))
 
     if !isfinite(x_min) || !isfinite(x_max)
-        error("At least one finite value must be provided to formatter.")
+        throw(ArgumentError("At least one finite value must be provided to formatter."))
     end
 
     if style == :auto
@@ -128,17 +116,17 @@ function showoff{T <: AbstractFloat}(xs::AbstractArray{T}, style=:auto)
 
     if style == :plain
         precision = plain_precision_heuristic(xs)
-        return AbstractString[format_fixed(x, precision) for x in xs]
+        return String[format_fixed(x, precision) for x in xs]
     elseif style == :scientific
         precision = scientific_precision_heuristic(xs)
-        return AbstractString[format_fixed_scientific(x, precision, false)
+        return String[format_fixed_scientific(x, precision, false)
                       for x in xs]
     elseif style == :engineering
         precision = scientific_precision_heuristic(xs)
-        return AbstractString[format_fixed_scientific(x, precision, true)
+        return String[format_fixed_scientific(x, precision, true)
                       for x in xs]
     else
-        error("$(style) is not a recongnized number format")
+        throw(ArgumentError("$(style) is not a recongnized number format"))
     end
 end
 
@@ -274,91 +262,88 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
 end
 
 
-
-if VERSION >= v"0.4-dev"
-    function showoff{T <: (Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none)
-        years = Set()
-        months = Set()
-        days = Set()
-        hours = Set()
-        minutes = Set()
-        seconds = Set()
-        for d in ds
-            push!(years, Dates.year(d))
-            push!(months, Dates.month(d))
-            push!(days, Dates.day(d))
-            push!(hours, Dates.hour(d))
-            push!(minutes, Dates.minute(d))
-            push!(seconds, Dates.second(d))
-        end
-        all_same_year         = length(years)   == 1
-        all_one_month         = length(months)  == 1 && 1 in months
-        all_one_day           = length(days)    == 1 && 1 in days
-        all_zero_hour         = length(hours)   == 1 && 0 in hours
-        all_zero_minute       = length(minutes) == 1 && 0 in minutes
-        all_zero_seconds      = length(minutes) == 1 && 0 in minutes
-        all_zero_milliseconds = length(minutes) == 1 && 0 in minutes
-
-        # first label format
-        label_months = false
-        label_days = false
-        f1 = "u d, yyyy"
-        f2 = ""
-        if !all_zero_seconds
-            f2 = "HH:MM:SS.sss"
-        elseif !all_zero_seconds
-            f2 = "HH:MM:SS"
-        elseif !all_zero_hour || !all_zero_minute
-            f2 = "HH:MM"
-        else
-            if !all_one_day
-                first_label_format = "u d yyyy"
-            elseif !all_one_month
-                first_label_format = "u yyyy"
-            elseif !all_one_day
-                first_label_format = "yyyy"
-            end
-        end
-        if f2 != ""
-            first_label_format = string(f1, " ", f2)
-        else
-            first_label_format = f1
-        end
-
-        labels = Array(AbstractString, length(ds))
-        labels[1] = Dates.format(ds[1], first_label_format)
-        d_last = ds[1]
-        for (i, d) in enumerate(ds[2:end])
-            if Dates.year(d) != Dates.year(d_last)
-                if all_one_day && all_one_month
-                    f1 = "yyyy"
-                elseif all_one_day && !all_one_month
-                    f1 = "u yyyy"
-                else
-                    f1 = "u d, yyyy"
-                end
-            elseif Dates.month(d) != Dates.month(d_last)
-                f1 = all_one_day ? "u" : "u d"
-            elseif Dates.day(d) != Dates.day(d_last)
-                f1 = "d"
-            else
-                f1 = ""
-            end
-
-            if f2 != ""
-                f = string(f1, " ", f2)
-            elseif f1 != ""
-                f = f1
-            else
-                f = first_label_format
-            end
-
-            labels[i+1] = Dates.format(d, f)
-            d_last = d
-        end
-
-        return labels
+function showoff{T <: (Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none)
+    years = Set()
+    months = Set()
+    days = Set()
+    hours = Set()
+    minutes = Set()
+    seconds = Set()
+    for d in ds
+        push!(years, Dates.year(d))
+        push!(months, Dates.month(d))
+        push!(days, Dates.day(d))
+        push!(hours, Dates.hour(d))
+        push!(minutes, Dates.minute(d))
+        push!(seconds, Dates.second(d))
     end
+    all_same_year         = length(years)   == 1
+    all_one_month         = length(months)  == 1 && 1 in months
+    all_one_day           = length(days)    == 1 && 1 in days
+    all_zero_hour         = length(hours)   == 1 && 0 in hours
+    all_zero_minute       = length(minutes) == 1 && 0 in minutes
+    all_zero_seconds      = length(minutes) == 1 && 0 in minutes
+    all_zero_milliseconds = length(minutes) == 1 && 0 in minutes
+
+    # first label format
+    label_months = false
+    label_days = false
+    f1 = "u d, yyyy"
+    f2 = ""
+    if !all_zero_seconds
+        f2 = "HH:MM:SS.sss"
+    elseif !all_zero_seconds
+        f2 = "HH:MM:SS"
+    elseif !all_zero_hour || !all_zero_minute
+        f2 = "HH:MM"
+    else
+        if !all_one_day
+            first_label_format = "u d yyyy"
+        elseif !all_one_month
+            first_label_format = "u yyyy"
+        elseif !all_one_day
+            first_label_format = "yyyy"
+        end
+    end
+    if f2 != ""
+        first_label_format = string(f1, " ", f2)
+    else
+        first_label_format = f1
+    end
+
+    labels = Vector{String}(length(ds))
+    labels[1] = Dates.format(ds[1], first_label_format)
+    d_last = ds[1]
+    for (i, d) in enumerate(ds[2:end])
+        if Dates.year(d) != Dates.year(d_last)
+            if all_one_day && all_one_month
+                f1 = "yyyy"
+            elseif all_one_day && !all_one_month
+                f1 = "u yyyy"
+            else
+                f1 = "u d, yyyy"
+            end
+        elseif Dates.month(d) != Dates.month(d_last)
+            f1 = all_one_day ? "u" : "u d"
+        elseif Dates.day(d) != Dates.day(d_last)
+            f1 = "d"
+        else
+            f1 = ""
+        end
+
+        if f2 != ""
+            f = string(f1, " ", f2)
+        elseif f1 != ""
+            f = f1
+        else
+            f = first_label_format
+        end
+
+        labels[i+1] = Dates.format(d, f)
+        d_last = d
+    end
+
+    return labels
 end
 
 
