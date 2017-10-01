@@ -44,5 +44,5 @@ end
     @test showoff([Dates.DateTime("2017-04-11", "yyyy-mm-dd")]) == ["Apr 11, 2017"]
     @test showoff(["a", "b"]) == ["\"a\"", "\"b\""]
     @test_throws ArgumentError showoff(x, :nevergonnagiveyouup)
-    @test_throws ArgumentError showoff([Inf, Inf, NaN])
+    @test showoff([Inf, Inf, NaN]) == ["Inf", "Inf", "NaN"]
 end
