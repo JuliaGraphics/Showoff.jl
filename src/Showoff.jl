@@ -3,6 +3,7 @@ __precompile__()
 module Showoff
 
 using Compat
+using Dates
 import Compat.Iterators: drop
 
 export showoff
