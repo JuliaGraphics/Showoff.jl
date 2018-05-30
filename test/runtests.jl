@@ -1,5 +1,6 @@
 using Showoff
-using Base.Test
+using Compat
+using Compat.Test
 
 @testset "Internals" begin
     @test Showoff.@grisu_ccall(1, 2, 3) === nothing
