@@ -3,7 +3,7 @@ __precompile__()
 module Showoff
 
 using Compat
-import Compat.Iterators: drop
+using Compat.Dates
 
 export showoff
 
@@ -21,7 +21,7 @@ end
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
-    result = Vector{String}(length(xs))
+    result = Vector{String}(undef, length(xs))
     buf = IOBuffer()
     for (i, x) in enumerate(xs)
         show(buf, x)
@@ -78,7 +78,7 @@ function concrete_maximum(xs)
 end
 
 
-function plain_precision_heuristic{T <: AbstractFloat}(xs::AbstractArray{T})
+function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
@@ -89,14 +89,14 @@ function plain_precision_heuristic{T <: AbstractFloat}(xs::AbstractArray{T})
 end
 
 
-function scientific_precision_heuristic{T <: AbstractFloat}(xs::AbstractArray{T})
+function scientific_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = [x == 0.0 ? 0.0 : x / 10.0^floor(log10(abs(x)))
           for x in xs if isfinite(x)]
     return plain_precision_heuristic(ys) + 1
 end
 
 
-function showoff{T <: AbstractFloat}(xs::AbstractArray{T}, style=:auto)
+function showoff(xs::AbstractArray{<:AbstractFloat}, style=:auto)
     x_min = concrete_minimum(xs)
     x_max = concrete_maximum(xs)
     x_min = Float64(Float32(x_min))
@@ -262,7 +262,7 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
 end
 
 
-function showoff{T <: (Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none)
+function showoff(ds::AbstractArray{T}, style=:none) where T<:Union{Date,DateTime}
     years = Set()
     months = Set()
     days = Set()
@@ -311,7 +311,7 @@ function showoff{T <: (Union{Date, DateTime})}(ds::AbstractArray{T}, style=:none
         first_label_format = f1
     end
 
-    labels = Vector{String}(length(ds))
+    labels = Vector{String}(undef, length(ds))
     labels[1] = Dates.format(ds[1], first_label_format)
     d_last = ds[1]
     for (i, d) in enumerate(ds[2:end])

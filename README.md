@@ -1,7 +1,7 @@
 # Showoff
 
-[![Showoff](http://pkg.julialang.org/badges/Showoff_0.5.svg)](http://pkg.julialang.org/?pkg=Showoff)
 [![Showoff](http://pkg.julialang.org/badges/Showoff_0.6.svg)](http://pkg.julialang.org/?pkg=Showoff)
+[![Showoff](http://pkg.julialang.org/badges/Showoff_0.7.svg)](http://pkg.julialang.org/?pkg=Showoff)
 [![Build Status](https://travis-ci.org/JuliaGraphics/Showoff.jl.svg?branch=master)](https://travis-ci.org/JuliaGraphics/Showoff.jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaGraphics/Showoff.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaGraphics/Showoff.jl?branch=master)
 
@@ -16,9 +16,9 @@ If you want your type to look nice when plotted, just define a `showoff`
 function. Here's an example.
 
 ```julia
-import Showoff
+using Showoff
 
-immutable Percent
+struct Percent
     value::Float64
 end
 
