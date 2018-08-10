@@ -35,7 +35,7 @@ end
 # Floating-point
 
 function concrete_minimum(xs)
-    if done(xs, start(xs))
+    if isempty(xs)
         throw(ArgumentError("argument must not be empty"))
     end
 
@@ -57,7 +57,7 @@ end
 
 
 function concrete_maximum(xs)
-    if done(xs, start(xs))
+    if isempty(xs)
         throw(ArgumentError("argument must not be empty"))
     end
 
