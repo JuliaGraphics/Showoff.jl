@@ -82,7 +82,7 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
-        len, point, neg, digits = grisu(convert(Float32, y), Base.Grisu.SHORTEST, 0)
+        len, point, neg, digits = grisu(y, Base.Grisu.SHORTEST, 0)
         precision = max(precision, len - point)
     end
     return max(precision, 0)
@@ -99,8 +99,8 @@ end
 function showoff(xs::AbstractArray{<:AbstractFloat}, style=:auto)
     x_min = concrete_minimum(xs)
     x_max = concrete_maximum(xs)
-    x_min = Float64(Float32(x_min))
-    x_max = Float64(Float32(x_max))
+    x_min = Float64(x_min)
+    x_max = Float64(x_max)
 
     if !isfinite(x_min) || !isfinite(x_max)
         throw(ArgumentError("At least one finite value must be provided to formatter."))
