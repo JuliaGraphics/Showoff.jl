@@ -2,8 +2,7 @@ __precompile__()
 
 module Showoff
 
-using Compat
-using Compat.Dates
+using Dates
 
 export showoff
 
