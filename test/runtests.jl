@@ -45,6 +45,7 @@ end
     @test showoff(x, :engineering) == ["1.12345×10⁰", "4.56780×10⁰"]
     @test showoff([DateTime("2017-04-11", "yyyy-mm-dd")]) == ["Apr 11, 2017"]
     @test showoff(["a", "b"]) == ["\"a\"", "\"b\""]
+    @test showoff([1, 1e39]) == ["1×10⁰", "1×10³⁹"]
     @test_throws ArgumentError showoff(x, :nevergonnagiveyouup)
     @test_throws ArgumentError showoff([Inf, Inf, NaN])
 end
