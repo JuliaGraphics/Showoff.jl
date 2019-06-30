@@ -81,7 +81,7 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
-        len, point, neg, digits = grisu(y, Base.Grisu.SHORTEST, 0)
+        len, point, neg, digits = grisu(convert(Float32, y), Base.Grisu.SHORTEST, 0)
         precision = max(precision, len - point)
     end
     return max(precision, 0)
