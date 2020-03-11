@@ -206,11 +206,7 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
     end
 
     mag = floor(Int, log10(abs(x)))
-    if mag < 0
-        grisu_precision = precision + abs(round(Int, mag))
-    else
-        grisu_precision = precision
-    end
+    grisu_precision = precision
 
     len, point, neg, digits = grisu((x / 10.0^mag), Base.Grisu.FIXED, grisu_precision)
     point += mag
