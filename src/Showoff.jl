@@ -4,6 +4,12 @@ module Showoff
 
 using Dates
 
+if isdefined(Base, :Grisu)
+    const Grisu = Base.Grisu
+else
+    import Grisu
+end
+
 export showoff
 
 
@@ -14,7 +20,7 @@ end
 
 
 function grisu(v::AbstractFloat, mode, requested_digits)
-    return tuple(Base.Grisu.grisu(v, mode, requested_digits)..., Base.Grisu.DIGITS)
+    return tuple(Grisu.grisu(v, mode, requested_digits)..., Grisu.DIGITS)
 end
 
 
@@ -81,7 +87,7 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
-        len, point, neg, digits = grisu(convert(Float32, y), Base.Grisu.SHORTEST, 0)
+        len, point, neg, digits = grisu(convert(Float32, y), Grisu.SHORTEST, 0)
         precision = max(precision, len - point)
     end
     return max(precision, 0)
@@ -143,7 +149,7 @@ function format_fixed(x::AbstractFloat, precision::Integer)
         return "NaN"
     end
 
-    len, point, neg, digits = grisu(x, Base.Grisu.FIXED, precision)
+    len, point, neg, digits = grisu(x, Grisu.FIXED, precision)
 
     buf = IOBuffer()
     if x < 0
@@ -212,7 +218,7 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
         grisu_precision = precision
     end
 
-    len, point, neg, digits = grisu((x / 10.0^mag), Base.Grisu.FIXED, grisu_precision)
+    len, point, neg, digits = grisu((x / 10.0^mag), Grisu.FIXED, grisu_precision)
     point += mag
 
     @assert len > 0
