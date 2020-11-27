@@ -1,16 +1,14 @@
 # Showoff
 
-[![Showoff](http://pkg.julialang.org/badges/Showoff_0.6.svg)](http://pkg.julialang.org/?pkg=Showoff)
-[![Showoff](http://pkg.julialang.org/badges/Showoff_0.7.svg)](http://pkg.julialang.org/?pkg=Showoff)
 [![Build Status](https://travis-ci.org/JuliaGraphics/Showoff.jl.svg?branch=master)](https://travis-ci.org/JuliaGraphics/Showoff.jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaGraphics/Showoff.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaGraphics/Showoff.jl?branch=master)
 
 Showoff provides an interface for consistently formatting an array of n things,
-e.g. numbers, dates, unitful values. It's used in Gadfly to
+e.g. numbers, dates, unitful values. It's used in Gadfly, Plots and Makie to
 label axes and keys.
 
 It defines a function called `showoff` that takes an `AbstractArray` of some
-type and returns an array of strings of the same length.
+type, and returns an array of strings of the same length.
 
 If you want your type to look nice when plotted, just define a `showoff`
 function. Here's an example.
@@ -32,7 +30,7 @@ Now we (and more importantly, Gadfly) can print percentages like:
 ```julia
 map(println, showoff([Percent(100 * rand()) for _ in 1:20]))
 ```
-```
+```julia
 60.505943%
 73.255897%
 97.477079%
