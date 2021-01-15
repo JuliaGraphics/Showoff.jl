@@ -163,6 +163,11 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
     end
     leading_index = findfirst(c -> '1' <= c <= '9', power)
 
+    if isnothing(leading_index)
+        print(buf, superscript_numerals[1])
+        return String(take!(buf))
+    end
+
     for (i,c) in enumerate(power[leading_index:end])
         if c == '-'
             print(buf, '⁻')
