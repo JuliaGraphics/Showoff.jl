@@ -1,16 +1,8 @@
 using Showoff
 using Test
 using Dates
-if isdefined(Base, :Grisu)
-    const Grisu = Base.Grisu
-else
-    import Grisu
-end
 
 @testset "Internals" begin
-    @test Showoff.@grisu_ccall(1, 2, 3) === nothing
-    @test Showoff.grisu(1.0, Grisu.SHORTEST, 2) == (1, 1, false, Grisu.DIGITS)
-
     let x = [1.0, Inf, 2.0, NaN]
         @test Showoff.concrete_minimum(x) == 1.0
         @test Showoff.concrete_maximum(x) == 2.0
@@ -36,8 +28,9 @@ end
     @test Showoff.format_fixed_scientific(-Inf, 1, false) == "-∞"
     @test Showoff.format_fixed_scientific(NaN, 1, false) == "NaN"
     @test Showoff.format_fixed_scientific(0.012345678, 4, true) == "12.34568×10⁻³"
-    @test Showoff.format_fixed_scientific(0.012345678, 4, false) == "1.234568×10⁻²"
-    @test Showoff.format_fixed_scientific(-10.0, 4, false) == "-1.000×10¹"
+    @test Showoff.format_fixed_scientific(0.012345678, 4, false) == "1.2346×10⁻²"
+    @test Showoff.format_fixed_scientific(-10.0, 4, false) == "-1.0000×10¹"
+    @test Showoff.format_fixed_scientific(-2.99999999999999956E-16, 2, false) == "-3.00×10⁻¹⁶"
 end
 
 @testset "Showoff" begin

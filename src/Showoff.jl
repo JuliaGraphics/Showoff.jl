@@ -4,25 +4,9 @@ module Showoff
 
 using Dates
 
-if isdefined(Base, :Grisu)
-    import Base.Grisu
-else
-    import Grisu
-end
+using Base.Ryu
 
 export showoff
-
-
-# suppress compile errors when there isn't a grisu_ccall macro
-macro grisu_ccall(x, mode, ndigits)
-    quote end
-end
-
-
-function grisu(v::AbstractFloat, mode, requested_digits)
-    return tuple(Grisu.grisu(v, mode, requested_digits)..., Grisu.DIGITS)
-end
-
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
@@ -87,8 +71,7 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
-        len, point, neg, digits = grisu(convert(Float32, y), Grisu.SHORTEST, 0)
-        precision = max(precision, len - point)
+        precision = max(precision, abs(Ryu.reduce_shortest(y)[2]))
     end
     return max(precision, 0)
 end
@@ -148,51 +131,7 @@ function format_fixed(x::AbstractFloat, precision::Integer)
     elseif isnan(x)
         return "NaN"
     end
-
-    len, point, neg, digits = grisu(x, Grisu.FIXED, precision)
-
-    buf = IOBuffer()
-    if x < 0
-        print(buf, '-')
-    end
-
-    for c in digits[1:min(point, len)]
-        print(buf, convert(Char, c))
-    end
-
-    if point > len
-        for _ in len:point-1
-            print(buf, '0')
-        end
-    elseif point < len
-        if point <= 0
-            print(buf, '0')
-        end
-        print(buf, '.')
-        if point < 0
-            for _ in 1:-point
-                print(buf, '0')
-            end
-            for c in digits[1:len]
-                print(buf, convert(Char, c))
-            end
-        else
-            for c in digits[point+1:len]
-                print(buf, convert(Char, c))
-            end
-        end
-    end
-
-    trailing_zeros = precision - max(0, len - point)
-    if trailing_zeros > 0 && point >= len
-        print(buf, '.')
-    end
-
-    for _ in 1:trailing_zeros
-        print(buf, '0')
-    end
-
-    String(take!(buf))
+    return Ryu.writefixed(x, precision)
 end
 
 const superscript_numerals = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
@@ -211,59 +150,29 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
         return "NaN"
     end
 
-    mag = floor(Int, log10(abs(x)))
-    if mag < 0
-        grisu_precision = precision + abs(round(Int, mag))
-    else
-        grisu_precision = precision
-    end
-
-    len, point, neg, digits = grisu((x / 10.0^mag), Grisu.FIXED, grisu_precision)
-    point += mag
-
-    @assert len > 0
+    e_format_number = Ryu.writeexp(x, precision)
+    base_digits, power = split(e_format_number, 'e')
 
     buf = IOBuffer()
-    if x < 0
-        print(buf, '-')
-    end
 
-    print(buf, convert(Char, digits[1]))
-    nextdigit = 2
-    if engineering
-        while (point - 1) % 3 != 0
-            if nextdigit <= len
-                print(buf, convert(Char, digits[nextdigit]))
-            else
-                print(buf, '0')
-            end
-            nextdigit += 1
-            point -= 1
-        end
-    end
-
-    if precision > 1
-        print(buf, '.')
-    end
-
-    for i in nextdigit:len
-        print(buf, convert(Char, digits[i]))
-    end
-
-    for i in (len+1):precision
-        print(buf, '0')
-    end
-
+    print(buf, base_digits)
     print(buf, "×10")
-    for c in string(point - 1)
-        if '0' <= c <= '9'
-            print(buf, superscript_numerals[c - '0' + 1])
-        elseif c == '-'
+
+    if power[1] == '-'
+        print(buf, '⁻')
+    end
+    leading_index = findfirst(c -> '1' <= c <= '9', power)
+
+    for (i,c) in enumerate(power[leading_index:end])
+        if c == '-'
             print(buf, '⁻')
+        elseif '0' <= c <= '9'
+            print(buf, superscript_numerals[c - '0' + 1])
         end
+
     end
 
-    return String(take!(buf))
+    String(take!(buf))
 end
 
 
