@@ -41,39 +41,70 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
     end
 
     if engineering
-        b, e10 = Ryu.reduce_shortest(convert(Float32, x))
-        d, r = divrem(e10, 3)
-        if d < 0 &&
-            d += sign(r)
-
+        base_digits, power = get_engineering_string(x, precision)
+    else
+        e_format_number = Ryu.writeexp(x, precision)
+        base_digits, power = split(e_format_number, 'e')
     end
-    ryustr = Ryu.writeexp(x, precision)
-    @show x ryustr
 
-    # Rewrite the exponent
+
     buf = IOBuffer()
-    ret = iterate(ryustr)
-    while ret !== nothing
-        c, state = ret
-        c === 'e' && break
-        print(buf, c)
-        ret = iterate(ryustr, state)
+
+    print(buf, base_digits)
+    print(buf, "×10")
+
+    if power[1] == '-'
+        print(buf, '⁻')
     end
-    if ret !== nothing
-        print(buf, "×10")
-        _, state = ret
-        ret = iterate(ryustr, state)
-        while ret !== nothing
-            c, state = ret
-            if '0' <= c <= '9'
-                print(buf, superscript_numerals[c - '0' + 1])
-            elseif c == '-'
-                print(buf, '⁻')
-            end
-            ret = iterate(ryustr, state)
+    leading_index = findfirst(c -> '1' <= c <= '9', power)
+
+    if isnothing(leading_index)
+        print(buf, superscript_numerals[1])
+        return String(take!(buf))
+    end
+
+    for (i,c) in enumerate(power[leading_index:end])
+        if c == '-'
+            print(buf, '⁻')
+        elseif '0' <= c <= '9'
+            print(buf, superscript_numerals[c - '0' + 1])
+        end
+
+    end
+
+    String(take!(buf))
+end
+
+
+function get_engineering_string(x::AbstractFloat, precision::Integer)
+    e_format_number = Ryu.writeexp(x, precision)
+    base_digits, power = split(e_format_number, 'e')
+
+    int_power = parse(Int, power)
+    positive = int_power >= 0
+
+    # round the power to the nearest multiple of 3
+    # positive power -> move the "." to the right by mode, round the power to the higher power
+    # negative power -> move the "." to the right by mode, round the power to the lower power
+    # ex:
+    # 1.2334e5 = 123.334e3
+    # 1.2334-5 = 12.3334e-6
+
+    if positive
+        indices_to_move = int_power - floor(Int, int_power/3) * 3
+    else
+        indices_to_move = ceil(Int, abs(int_power)/3) * 3 - abs(int_power)
+    end
+
+    buf = IOBuffer()
+    for i in eachindex(base_digits)
+        if base_digits[i] != '.'
+            print(buf, base_digits[i])
+        end
+        if i == 2 + indices_to_move
+            print(buf, '.')
         end
     end
 
-    return String(take!(buf))
+    return String(take!(buf)), string(int_power - indices_to_move)
 end
-

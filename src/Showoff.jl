@@ -2,10 +2,10 @@ module Showoff
 
 using Dates
 
-if isdefined(Base, :Grisu)
-    include("grisu.jl")
-else
+if isdefined(Base, :Ryu)
     include("ryu.jl")
+else
+    include("grisu.jl")
 end
 
 export showoff
