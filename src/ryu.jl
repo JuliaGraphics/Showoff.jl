@@ -6,8 +6,11 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
-        b, e10 = Ryu.reduce_shortest(convert(Float32, y))
-        precision = max(precision, -e10)
+        if y ≈ 0.0 # 0 digits for numbers close to 0
+            continue
+        end
+        b, e10 = Ryu.reduce_shortest(y)
+        precision = max(precision, abs(e10))
     end
     return max(precision, 0)
 end
@@ -63,11 +66,11 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
         return String(take!(buf))
     end
 
-    for (i,c) in enumerate(power[leading_index:end])
-        if c == '-'
+    for digit in power[leading_index:end]
+        if digit == '-'
             print(buf, '⁻')
-        elseif '0' <= c <= '9'
-            print(buf, superscript_numerals[c - '0' + 1])
+        elseif '0' <= digit <= '9'
+            print(buf, superscript_numerals[digit - '0' + 1])
         end
 
     end
@@ -91,9 +94,9 @@ function get_engineering_string(x::AbstractFloat, precision::Integer)
     # 1.2334-5 = 12.3334e-6
 
     if positive
-        indices_to_move = int_power - floor(Int, int_power/3) * 3
+        indices_to_move = int_power % 3
     else
-        indices_to_move = ceil(Int, abs(int_power)/3) * 3 - abs(int_power)
+        indices_to_move = 3 - abs(int_power) % 3
     end
 
     buf = IOBuffer()
