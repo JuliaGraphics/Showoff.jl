@@ -6,7 +6,7 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
     precision = 0
     for y in ys
-        if y ≈ 0.0 # 0 digits for numbers close to 0
+        if isapprox(y, 0, atol=1e-16) # 0 has undefined rtol
             continue
         end
         b, e10 = Ryu.reduce_shortest(y)
@@ -44,6 +44,8 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
     end
 
     if engineering
+        # precision applies before convertic to engineering format
+        # that is, number of digits would be the same as the with non-engineering format
         base_digits, power = get_engineering_string(x, precision)
     else
         e_format_number = Ryu.writeexp(x, precision)
@@ -75,7 +77,7 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
 
     end
 
-    String(take!(buf))
+    return String(take!(buf))
 end
 
 
