@@ -61,7 +61,7 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
     end
     leading_index = findfirst(c -> '1' <= c <= '9', power)
 
-    if isnothing(leading_index)
+    if leading_index === nothing
         print(buf, superscript_numerals[1])
         return String(take!(buf))
     end
