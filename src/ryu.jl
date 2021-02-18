@@ -4,15 +4,16 @@ using Base.Ryu
 
 function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     ys = filter(isfinite, xs)
-    precision = 0
+    e10max = -(e10min = typemax(Int))
     for y in ys
-        if isapprox(y, 0, atol=1e-16) # 0 has undefined rtol
+        if isapprox(y, 0, atol=1e-16)
             continue
         end
-        b, e10 = Ryu.reduce_shortest(y)
-        precision = max(precision, abs(e10))
+        _, e10 = Ryu.reduce_shortest(y)
+        e10min = min(e10min, e10)
+        e10max = max(e10max, e10)
     end
-    return max(precision, 0)
+    return precision = min(-e10min, -e10max+16)
 end
 
 # Print a floating point number at fixed precision. Pretty much equivalent to
