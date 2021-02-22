@@ -36,7 +36,7 @@ end
     @test Showoff.format_fixed_scientific(0.012345678, 4, true) == "12.346×10⁻³"
     @test Showoff.format_fixed_scientific(0.012345678, 4, false) == "1.2346×10⁻²"
     @test Showoff.format_fixed_scientific(-10.0, 4, false) == "-1.0000×10¹"
-    @test Showoff.format_fixed_scientific(-10.0, 4, false) == "-1.0000×10¹"
+    @test Showoff.format_fixed_scientific(-10.0, 4, true) == "-10.000×10⁰"
     @test Showoff.format_fixed_scientific(-10.0, 4, false)[1:end-5] == @sprintf("%0.4e", -10.0)[1:end-4]
     @test Showoff.format_fixed_scientific(1.23456e7, 3, false)[1:end-5] == @sprintf("%0.3e", 1.23456e7)[1:end-4]
     @test Showoff.format_fixed_scientific(2.99999999999999956E-16, 2, false) == "3.00×10⁻¹⁶"
