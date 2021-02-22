@@ -103,11 +103,12 @@ function get_engineering_string(x::AbstractFloat, precision::Integer)
     end
 
     buf = IOBuffer()
+    negative_base_compensation = base_digits[1] == '-' ? 1 : 0
     for i in eachindex(base_digits)
         if base_digits[i] != '.'
             print(buf, base_digits[i])
         end
-        if i == 2 + indices_to_move
+        if i == 2 + indices_to_move + negative_base_compensation
             print(buf, '.')
         end
     end
