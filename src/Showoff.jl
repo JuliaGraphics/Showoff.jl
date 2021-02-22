@@ -74,7 +74,7 @@ function concrete_maximum(xs)
 end
 
 function scientific_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
-    ys = [x == 0.0 ? 0.0 : x / 10.0^floor(log10(abs(x)))
+    ys = [x == 0.0 ? 0.0 : round(10.0 ^ (z = log10(abs(Float64(x))); z - floor(z)); sigdigits=15)
           for x in xs if isfinite(x)]
     return plain_precision_heuristic(ys) + 1
 end
