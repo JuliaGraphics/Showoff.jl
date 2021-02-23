@@ -35,8 +35,9 @@ end
     @test Showoff.format_fixed_scientific(Inf, 1, false) == "∞"
     @test Showoff.format_fixed_scientific(-Inf, 1, false) == "-∞"
     @test Showoff.format_fixed_scientific(NaN, 1, false) == "NaN"
-    @test Showoff.format_fixed_scientific(0.012345678, 4, true) == "12.34568×10⁻³"
-    @test Showoff.format_fixed_scientific(0.012345678, 4, false) == "1.234568×10⁻²"
+    @test Showoff.format_fixed_scientific(0.012345678, 4, true) == "12.346×10⁻³"
+    @test Showoff.format_fixed_scientific(0.012345678, 4, false) == "1.2346×10⁻²"
+    @test Showoff.format_fixed_scientific(2.99999999999999956E-16, 2, false) == "3.0×10⁻¹⁶"
     @test Showoff.format_fixed_scientific(-10.0, 4, false) == "-1.000×10¹"
 end
 
