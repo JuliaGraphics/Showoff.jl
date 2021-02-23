@@ -108,7 +108,7 @@ function showoff(xs::AbstractArray{<:AbstractFloat}, style=:auto)
     x_max = Float64(x_max)
 
     if !isfinite(x_min) || !isfinite(x_max)
-        throw(ArgumentError("At least one finite value must be provided to formatter."))
+        return invoke(showoff,Tuple{AbstractArray,Symbol},xs,:none)
     end
 
     if style == :auto

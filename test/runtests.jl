@@ -51,5 +51,5 @@ end
     @test showoff(["a", "b"]) == ["\"a\"", "\"b\""]
     @test showoff([1, 1e39]) == ["1×10⁰", "1×10³⁹"]
     @test_throws ArgumentError showoff(x, :nevergonnagiveyouup)
-    @test_throws ArgumentError showoff([Inf, Inf, NaN])
+    @test showoff([Inf, Inf, NaN]) == ["Inf", "Inf", "NaN"]
 end
