@@ -49,6 +49,7 @@ end
     @test showoff(x) == ["1.12345", "4.56780"]
     @test showoff([0.0, 50000.0]) == (drops0s ? ["0", "5×10⁴"] : ["0", "5.0×10⁴"])
     @test showoff(x, :plain) == ["1.12345", "4.56780"]
+    @test showoff([0.0], :plain) == ["0"]
     @test showoff(x, :scientific) == (drops0s ? ["1.12345×10⁰", "4.56780×10⁰"] : ["1.123450×10⁰", "4.567800×10⁰"])
     @test showoff(x, :engineering) == showoff(x, :scientific)
     @test showoff([DateTime("2017-04-11", "yyyy-mm-dd")]) == ["Apr 11, 2017"]

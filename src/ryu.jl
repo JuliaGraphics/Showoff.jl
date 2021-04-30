@@ -7,9 +7,10 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
     e10max = -(e10min = typemax(Int))
     for y in ys
         if isapprox(y, 0, atol=1e-16)
-            continue
+            e10 = min(e10min, 0)
+        else
+            _, e10 = Ryu.reduce_shortest(convert(Float32, y))
         end
-        _, e10 = Ryu.reduce_shortest(convert(Float32, y))
         e10min = min(e10min, e10)
         e10max = max(e10max, e10)
     end
