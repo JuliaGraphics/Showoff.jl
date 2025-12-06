@@ -2,18 +2,9 @@ module Showoff
 
 using Dates
 
-if isdefined(Base, :Ryu)
-    include("ryu.jl")
-else
-    include("grisu.jl")
-end
+include("ryu.jl")
 
 export showoff
-
-# suppress compile errors when there isn't a grisu_ccall macro
-macro grisu_ccall(x, mode, ndigits)
-    quote end
-end
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
@@ -132,17 +123,13 @@ function showoff(ds::AbstractArray{T}, style=:none) where T<:Union{Date,DateTime
         push!(minutes, Dates.minute(d))
         push!(seconds, Dates.second(d))
     end
-    all_same_year         = length(years)   == 1
     all_one_month         = length(months)  == 1 && 1 in months
     all_one_day           = length(days)    == 1 && 1 in days
     all_zero_hour         = length(hours)   == 1 && 0 in hours
     all_zero_minute       = length(minutes) == 1 && 0 in minutes
     all_zero_seconds      = length(minutes) == 1 && 0 in minutes
-    all_zero_milliseconds = length(minutes) == 1 && 0 in minutes
 
     # first label format
-    label_months = false
-    label_days = false
     f1 = "u d, yyyy"
     f2 = ""
     if !all_zero_seconds
