@@ -12,13 +12,13 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         version:
-          - '1.10'
+          - 'min'
           - '1'
           - 'nightly'
         os:
@@ -33,7 +33,7 @@ jobs:
             version: '1'
             arch: arm64
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - uses: julia-actions/cache@v2
       - uses: julia-actions/setup-julia@v2
         with:
@@ -45,7 +45,7 @@ jobs:
         with:
           directories: src
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.0.1
+        uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
