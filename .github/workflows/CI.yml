@@ -23,8 +23,6 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-        arch:
-          - x64
         include:
           - os: windows-latest
             version: '1'
