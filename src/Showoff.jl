@@ -80,7 +80,7 @@ function scientific_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
 end
 
 
-function showoff(xs::AbstractArray{<:AbstractFloat}, style=:auto)
+function showoff(xs::AbstractArray{<:AbstractFloat}, style=:auto; export_raw=false)
     x_min = concrete_minimum(xs)
     x_max = concrete_maximum(xs)
     x_min = Float64(x_min)
@@ -103,11 +103,11 @@ function showoff(xs::AbstractArray{<:AbstractFloat}, style=:auto)
         return String[format_fixed(x, precision) for x in xs]
     elseif style == :scientific
         precision = scientific_precision_heuristic(xs)
-        return String[format_fixed_scientific(x, precision, false)
+        return String[format_fixed_scientific(x, precision, false, export_raw)
                       for x in xs]
     elseif style == :engineering
         precision = scientific_precision_heuristic(xs)
-        return String[format_fixed_scientific(x, precision, true)
+        return String[format_fixed_scientific(x, precision, true, export_raw)
                       for x in xs]
     else
         throw(ArgumentError("$(style) is not a recongnized number format"))

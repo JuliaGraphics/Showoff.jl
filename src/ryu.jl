@@ -34,7 +34,7 @@ end
 # Print a floating point number in scientific notation at fixed precision. Sort of equivalent
 # to @sprintf("%0.$(precision)e", x), but prettier printing.
 function format_fixed_scientific(x::AbstractFloat, precision::Integer,
-                                 engineering::Bool)
+                                 engineering::Bool, export_raw::Bool=false)
     if iszero(x)
         return "0"
     elseif isinf(x)
@@ -53,31 +53,35 @@ function format_fixed_scientific(x::AbstractFloat, precision::Integer,
     end
 
 
-    buf = IOBuffer()
+    if export_raw  #if export base_digits and power separately.
+        return e_format_number
+    else
+        buf = IOBuffer()
 
-    print(buf, base_digits)
-    print(buf, "×10")
+        print(buf, base_digits)
+        print(buf, "×10")
 
-    if power[1] == '-'
-        print(buf, '⁻')
-    end
-    leading_index = findfirst(c -> '1' <= c <= '9', power)
-
-    if leading_index === nothing
-        print(buf, superscript_numerals[1])
-        return String(take!(buf))
-    end
-
-    for digit in power[leading_index:end]
-        if digit == '-'
+        if power[1] == '-'
             print(buf, '⁻')
-        elseif '0' <= digit <= '9'
-            print(buf, superscript_numerals[digit - '0' + 1])
+        end
+        leading_index = findfirst(c -> '1' <= c <= '9', power)
+
+        if leading_index === nothing
+            print(buf, superscript_numerals[1])
+            return String(take!(buf))
         end
 
-    end
+        for digit in power[leading_index:end]
+            if digit == '-'
+                print(buf, '⁻')
+            elseif '0' <= digit <= '9'
+                print(buf, superscript_numerals[digit - '0' + 1])
+            end
 
-    return String(take!(buf))
+        end
+
+        return String(take!(buf))
+    end
 end
 
 
