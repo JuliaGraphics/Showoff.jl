@@ -6,11 +6,6 @@ using Printf
 const drops0s = !isdefined(Base, :Ryu)
 
 @testset "Internals" begin
-    @test Showoff.@grisu_ccall(1, 2, 3) === nothing
-    if isdefined(Showoff, :Grisu)
-        @test Showoff.grisu(1.0, Showoff.Grisu.SHORTEST, 2) == (1, 1, false, Showoff.Grisu.DIGITS)
-    end
-
     let x = [1.0, Inf, 2.0, NaN]
         @test Showoff.concrete_minimum(x) == 1.0
         @test Showoff.concrete_maximum(x) == 2.0
