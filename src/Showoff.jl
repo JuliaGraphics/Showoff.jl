@@ -116,90 +116,79 @@ end
 
 const superscript_numerals = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 
-
 function showoff(ds::AbstractArray{T}, style=:none) where T<:Union{Date,DateTime}
-    years = Set()
-    months = Set()
-    days = Set()
-    hours = Set()
-    minutes = Set()
-    seconds = Set()
-    for d in ds
-        push!(years, Dates.year(d))
-        push!(months, Dates.month(d))
-        push!(days, Dates.day(d))
-        push!(hours, Dates.hour(d))
-        push!(minutes, Dates.minute(d))
-        push!(seconds, Dates.second(d))
-    end
-    all_same_year         = length(years)   == 1
-    all_one_month         = length(months)  == 1 && 1 in months
-    all_one_day           = length(days)    == 1 && 1 in days
-    all_zero_hour         = length(hours)   == 1 && 0 in hours
-    all_zero_minute       = length(minutes) == 1 && 0 in minutes
-    all_zero_seconds      = length(minutes) == 1 && 0 in minutes
-    all_zero_milliseconds = length(minutes) == 1 && 0 in minutes
 
-    # first label format
-    label_months = false
-    label_days = false
-    f1 = "u d, yyyy"
-    f2 = ""
-    if !all_zero_seconds
-        f2 = "HH:MM:SS.sss"
+    all_one_month    = all(d -> isone(Dates.month(d)), ds)    
+    all_one_day      = all(d -> isone(Dates.day(d)), ds)
+    all_zero_hour    = all(d -> iszero(Dates.hour(d)), ds)
+    all_zero_minute  = all(d -> iszero(Dates.minute(d)), ds)
+    all_zero_seconds = all(d -> iszero(Dates.second(d)), ds)
+    all_zero_msec    = all(d -> iszero(Dates.millisecond(d)), ds)
+
+    # time label format
+    tformat = if !all_zero_msec
+        "HH:MM:SS.sss"
     elseif !all_zero_seconds
-        f2 = "HH:MM:SS"
+        "HH:MM:SS"
     elseif !all_zero_hour || !all_zero_minute
-        f2 = "HH:MM"
+        "HH:MM"
     else
-        if !all_one_day
-            first_label_format = "u d yyyy"
-        elseif !all_one_month
-            first_label_format = "u yyyy"
-        elseif !all_one_day
-            first_label_format = "yyyy"
-        end
+        ""
     end
-    if f2 != ""
-        first_label_format = string(f1, " ", f2)
+
+    # date label format
+    dformat = if tformat != ""
+        "u d, yyyy"
+    elseif all_one_day && all_one_month
+        "yyyy"
+    elseif all_one_day && !all_one_month
+        "u yyyy"
     else
-        first_label_format = f1
+        "u d, yyyy"
     end
+    
+    first_dtformat = tformat == "" ? dformat : string(dformat, " ", tformat)
 
     labels = Vector{String}(undef, length(ds))
-    labels[1] = Dates.format(ds[1], first_label_format)
+    labels[1] = Dates.format(ds[1], first_dtformat)
+
     d_last = ds[1]
     for (i, d) in enumerate(ds[2:end])
-        if Dates.year(d) != Dates.year(d_last)
-            if all_one_day && all_one_month
-                f1 = "yyyy"
-            elseif all_one_day && !all_one_month
-                f1 = "u yyyy"
-            else
-                f1 = "u d, yyyy"
-            end
-        elseif Dates.month(d) != Dates.month(d_last)
-            f1 = all_one_day ? "u" : "u d"
-        elseif Dates.day(d) != Dates.day(d_last)
-            f1 = "d"
-        else
-            f1 = ""
+        year_changed = Dates.year(d) != Dates.year(d_last)
+        month_changed = Dates.month(d) != Dates.month(d_last)
+        day_changed = Dates.day(d) != Dates.day(d_last)
+
+        dformat = if year_changed && all_one_day && all_one_month
+            "yyyy"
+        elseif year_changed && all_one_day && !all_one_month
+            "u yyyy"
+        elseif year_changed 
+            "u d, yyyy"
+        elseif month_changed && all_one_day
+            "u"
+         elseif month_changed && !all_one_day
+            "u d"
+        elseif day_changed
+            "d"
+        else # same day, month, year
+            "" 
         end
 
-        if f2 != ""
-            f = string(f1, " ", f2)
-        elseif f1 != ""
-            f = f1
+        dtformat = if tformat != "" && dformat != ""
+            string(dformat, " ", tformat)
+        elseif tformat == "" && dformat != ""
+            dformat
+        elseif tformat != "" && dformat == ""
+            tformat
         else
-            f = first_label_format
+            first_dtformat
         end
 
-        labels[i+1] = Dates.format(d, f)
+        labels[i+1] = Dates.format(d, dtformat)
         d_last = d
     end
 
     return labels
 end
-
 
 end # module
