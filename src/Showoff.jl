@@ -2,18 +2,9 @@ module Showoff
 
 using Dates
 
-if isdefined(Base, :Ryu)
-    include("ryu.jl")
-else
-    include("grisu.jl")
-end
+include("ryu.jl")
 
 export showoff
-
-# suppress compile errors when there isn't a grisu_ccall macro
-macro grisu_ccall(x, mode, ndigits)
-    quote end
-end
 
 # Fallback
 function showoff(xs::AbstractArray, style=:none)
