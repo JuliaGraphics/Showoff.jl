@@ -18,6 +18,10 @@ const drops0s = !isdefined(Base, :Ryu)
         @test Showoff.plain_precision_heuristic(x) == 5
         @test Showoff.scientific_precision_heuristic(x) == 6
     end
+
+    # The heuristic must not return a negative precision (Ryu.writefixed
+    # throws on negative precision from Julia 1.14)
+    @test Showoff.plain_precision_heuristic([1000.0, 2000.0, 3000.0]) == 0
 end
 
 @testset "Formatting" begin
@@ -52,4 +56,5 @@ end
     @test showoff([1, 1e39]) == (drops0s ? ["1×10⁰", "1×10³⁹"] : ["1.0×10⁰", "1.0×10³⁹"])
     @test_throws ArgumentError showoff(x, :nevergonnagiveyouup)
     @test showoff([Inf, Inf, NaN]) == ["Inf", "Inf", "NaN"]
+    @test showoff([1000.0, 2000.0, 3000.0]) == ["1000", "2000", "3000"]
 end
