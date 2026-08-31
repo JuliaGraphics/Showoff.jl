@@ -14,7 +14,7 @@ function plain_precision_heuristic(xs::AbstractArray{<:AbstractFloat})
         e10min = min(e10min, e10)
         e10max = max(e10max, e10)
     end
-    return precision = min(-e10min, -e10max+16)
+    return precision = max(0, min(-e10min, -e10max+16))
 end
 
 # Print a floating point number at fixed precision. Pretty much equivalent to
@@ -28,7 +28,8 @@ function format_fixed(x::AbstractFloat, precision::Integer)
         return "NaN"
     end
 
-    return Ryu.writefixed(x, precision)
+    # Ryu.writefixed requires a non-negative precision (enforced from Julia 1.14)
+    return Ryu.writefixed(x, max(0, precision))
 end
 
 # Print a floating point number in scientific notation at fixed precision. Sort of equivalent
